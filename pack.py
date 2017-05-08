@@ -73,6 +73,7 @@ def pack(relative_dir, current_dir, output_path, settings):
     flatten_path = settings.get('flatten_path', True)
     sheet_extension = settings.get('sheet_extension', 'pvr.ccz')
     data_extension = settings.get('data_extension', 'plist')
+    input_directories = settings.get('input_directories', ['.'])
 
     if not flatten_path:
         command.extend(['--replace', '^=%s/' % relative_dir])
@@ -80,11 +81,13 @@ def pack(relative_dir, current_dir, output_path, settings):
     command.extend(['--data', '%s.%s' % (output_path, data_extension)])
 
     # Input.
-    for item in os.listdir(current_dir):
-        path = os.path.join(current_dir, item)
-        if path.endswith('.png') or path.endswith('.jpg'):
-            # PNG or JPG.
-            command.append(path)
+    for input_dir in input_directories:
+        full_path = os.path.join(current_dir, input_dir)
+        for item in os.listdir(full_path):
+            path = os.path.join(full_path, item)
+            if path.endswith('.png') or path.endswith('.jpg'):
+                # PNG or JPG.
+                command.append(path)
 
     return command
 
