@@ -10,6 +10,9 @@ import copy
 # This key is special: it is can not be inherited.
 output_path_key = 'output_path'
 
+def get_current_file_path():
+    return os.path.dirname(os.path.realpath(__file__))
+
 # Gets the settings json file path for the specified directory.
 # @param dir The directory.
 def get_settings_path(dir):
@@ -74,22 +77,39 @@ def pack(relative_dir, current_dir, output_path, settings):
     sheet_extension = settings.get('sheet_extension', 'pvr.ccz')
     data_extension = settings.get('data_extension', 'plist')
     input_directories = settings.get('input_directories', ['.'])
+    combine_images = settings.get('combine_images', True)
 
     if not flatten_path:
         command.extend(['--replace', '^=%s/' % relative_dir])
-    command.extend(['--sheet', '%s.%s' % (output_path, sheet_extension)])
-    command.extend(['--data', '%s.%s' % (output_path, data_extension)])
 
     # Input.
+    input_paths = []
     for input_dir in input_directories:
         full_path = os.path.join(current_dir, input_dir)
         for item in os.listdir(full_path):
             path = os.path.join(full_path, item)
             if path.endswith('.png') or path.endswith('.jpg'):
                 # PNG or JPG.
-                command.append(path)
+                input_paths.append(path)
 
-    return command
+    commands = []
+    if combine_images:
+        command.extend(['--sheet', '%s.%s' % (output_path, sheet_extension)])
+        command.extend(['--data', '%s.%s' % (output_path, data_extension)])
+        command.extend(input_paths)
+        commands.append(command)
+    else:
+        for path in input_paths:
+            # http://stackoverflow.com/questions/678236/how-to-get-the-filename-without-the-extension-from-a-path-in-python
+            filename = os.path.splitext(os.path.basename(path))[0]
+
+            clone = list(command)
+            clone.append(path)
+            clone.extend(['--sheet', '%s.%s' % (os.path.join(output_path, filename), sheet_extension)])
+            clone.extend(['--data', os.path.join(get_current_file_path(), '.texture_packer_dummy_{v}.plist')])
+            commands.append(clone)
+
+    return commands
 
 # Finds all packing commands.
 # @param input_dir The input directory.
@@ -126,8 +146,7 @@ def dfs(relative_dir, current_dir, output_dir, current_settings):
             if output_path_key in data:
                 # Process command if output_path_key exists.
                 output_path_array = data[output_path_key]
-                command = pack_with_output_path_array(relative_dir, current_dir, output_dir, output_path_array, current_settings)
-                commands.append(command)
+                commands.extend(pack_with_output_path_array(relative_dir, current_dir, output_dir, output_path_array, current_settings))
 
     # Recurse sub-directories.
     for item in os.listdir(current_dir):
@@ -142,7 +161,7 @@ def dfs(relative_dir, current_dir, output_dir, current_settings):
     return commands
 
 def process_commands(input_dir, output_dir):
-    current_dir = os.path.dirname(os.path.realpath(__file__))
+    current_dir = get_current_file_path()
 
     commands = process(input_dir, output_dir)
 
