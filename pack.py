@@ -65,6 +65,7 @@ def parse_command(settings):
             # Must convert to string.
             command.extend([key, str(settings[key])])
 
+    return command
 
 def pack(relative_dir, current_dir, output_path, settings):
     command = parse_command(settings)
