@@ -63,7 +63,9 @@ def parse_command(settings):
         ]
         if key in single_options:
             # Settings that do not have value (only key).
-            command.append(key)
+            # command.append(key)
+            # Single options makes inheritance impossible.
+            continue
         else:
             # Must convert to string.
             command.extend([key, str(settings[key])])
@@ -73,14 +75,24 @@ def parse_command(settings):
 def pack(relative_dir, current_dir, output_path, settings):
     command = parse_command(settings)
 
+    rotation = settings.get('rotation', False)
+    if rotation:
+        command.append('--enable-rotation')
+    else:
+        command.append('--disable-rotation')
+
+    premultiply_alpha = settings.get('premultiply_alpha', False)
+    if premultiply_alpha:
+        command.append('--premultiply-alpha')
+
     flatten_path = settings.get('flatten_path', True)
+    if not flatten_path:
+        command.extend(['--replace', '^=%s/' % relative_dir])
+
     sheet_extension = settings.get('sheet_extension', 'pvr.ccz')
     data_extension = settings.get('data_extension', 'plist')
     input_directories = settings.get('input_directories', ['.'])
     combine_images = settings.get('combine_images', True)
-
-    if not flatten_path:
-        command.extend(['--replace', '^=%s/' % relative_dir])
 
     # Input.
     input_paths = []
