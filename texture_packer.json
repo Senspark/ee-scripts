@@ -1,1 +1,35 @@
-{"--maxrects-heuristics":"Best","--scale-mode":"Smooth","--content-protection":"0123456789abcdef0123456789abcdef","--pack-mode":"Best","--texture-format":"pvr2ccz","--inner-padding":0,"rotation":true,"flatten_path":true,"--shape-padding":4,"--format":"cocos2d","--algorithm":"MaxRects","--opt":"RGBA8888","output_path":["{v}","my","sheet","path"],"--size-constraints":"POT","--png-opt-level":0,"--max-height":2048,"sheet_extension":"pvr.ccz","--trim-mode":"Trim","--max-width":2048,"--variant":["0.25:iphone","0.50:iphonehd","1.00:ipadhd"],"--border-padding":2,"data_extension":"plist","premultiply_alpha":true,"--extrude":1}
+{
+    "--algorithm":"MaxRects",
+    "--border-padding":2,
+    "--content-protection":"0123456789abcdef0123456789abcdef",
+    "--extrude":1,
+    "--format":"cocos2d",
+    "--inner-padding":0,
+    "--max-height":2048,
+    "--max-width":2048,
+    "--maxrects-heuristics":"Best",
+    "--opt":"RGBA8888",
+    "--pack-mode":"Best",
+    "--png-opt-level":0,
+    "--scale-mode":"Smooth",
+    "--shape-padding":4,
+    "--size-constraints":"POT",
+    "--texture-format":"pvr2ccz",
+    "--trim-mode":"Trim",
+    "--variant":[
+        "0.25:iphone",
+        "0.50:iphonehd",
+        "1.00:ipadhd"
+    ],
+    "data_extension":"plist",
+    "flatten_path":true,
+    "output_path":[
+        "{v}",
+        "my",
+        "sheet",
+        "path"
+    ],
+    "premultiply_alpha":true,
+    "rotation":true,
+    "sheet_extension":"pvr.ccz",
+}
