@@ -1,0 +1,20 @@
+{% spaceless %}
+    {% for variant in allResults %}
+        {% ifequal forloop.counter0 variantIndex %}
+            {% for tex in variant.textures %}
+{{tex.fullName}}
+size: {{tex.size.width}},{{tex.size.height}}
+format: RGBA8888
+filter: MipMapLinearNearest,Nearest
+repeat: none{% for sprite in tex.allSprites %}
+{{sprite.trimmedName}}
+rotate: {{sprite.rotated}}
+xy: {{sprite.frameRect.x}}, {{sprite.frameRect.y}}
+size: {{sprite.untrimmedSize.width}}, {{sprite.untrimmedSize.height}}
+orig: {{sprite.untrimmedSize.width}}, {{sprite.untrimmedSize.height}}
+offset: {{sprite.cornerOffset.x}}, {{sprite.cornerOffset.y}}
+index: -1{% endfor %}
+            {% endfor %}
+        {% endifequal %}
+    {% endfor %}
+{% endspaceless %}

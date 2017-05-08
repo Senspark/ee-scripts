@@ -1,0 +1,82 @@
+<exporter version="1.0"> <!-- file format version, must be 1.0 -->
+
+    <!-- identifier of the exporter -->
+    <!-- change this if you duplicated an existing exporter -->
+    <name>spine_mmln_n</name>
+    
+    <!-- name of the exporter that is shown in the framework selector dialog -->
+    <!-- change this if you duplicated an existing exporter -->
+    <displayName>Spine</displayName>
+    
+    <!-- description of the exporter -->
+    <description>Exporter for Spine Made by QcMat.com https://github.com/QcMat/SpineExporter Edited by enrevol</description>
+    
+    <!-- exporter version; unused at the moment -->
+    <version>1.0</version>
+
+    <files>
+        <!-- list of data files which should be generated -->
+        <file>
+            <!-- name of this file type; used in the tps file 
+                 and by the commandline client: for each MYDATA file 
+                 a commandline option "- -MYDATA-file" is evaluated
+                 (remark: write the option without the blank between the "-" signs,
+                 it's required in the XML comment)  -->
+            <name>datafile</name>
+            
+            <!-- human readable name (used in the TexturePacker GUI) -->
+            <displayName>Spine Sprite Sheet</displayName>
+            
+            <!-- file extension, without '.' -->
+            <fileExtension>atlas</fileExtension>
+
+            <!-- description what the file contains, 
+                 used for tooltips in the GUI (optional) -->
+            <description>Spine exporter for TexturePacker</description>
+            
+            <!-- name of the template file -->
+            <template>exporter.atlas</template>
+
+            <!-- this file is optional, i.e. if the user does not specify an
+                 output file name, the file will not be generated; 
+                 (optional, default is 'false') -->
+            <optional>false</optional>
+
+            <!-- specifies for which scaling variant this data file is generated:
+                 all:   for all variants  (default)
+                 first: only for the first variant
+                 last:  only for the last one   -->
+            <hasSeparateAutoSDFiles>all</hasSeparateAutoSDFiles>
+
+            <!-- do not write a file for each multipack variation 
+                 (optional, default is 'true') -->
+            <hasSeparateMultiPackFiles>false</hasSeparateMultiPackFiles>
+        </file>
+    </files>
+    
+    <!-- target framework supports trimming -->
+    <supportsTrimming>true</supportsTrimming>
+    
+    <!-- target framework supports rotated sprites -->
+    <supportsRotation>true</supportsRotation>
+    
+    <!-- rotated sprites direction (cw/ccw), only required for supportsRotation=true -->
+    <rotationDirection>ccw</rotationDirection>
+    
+    <!-- supports texture sizes which are not powers of two -->
+    <supportsNPOT>true</supportsNPOT>
+
+    <!-- target framework supports pivot point settings 
+         (optional, default=false) -->
+    <supportsPivotPoint>false</supportsPivotPoint>
+
+    <!-- ensure that width/height of generated texture is multiple of this factor 
+         (optional, default=1) -->
+    <textureSizeFactor>1</textureSizeFactor>
+    
+    <!-- supports file name stripping (remove .png etc.) -->
+    <supportsTrimSpriteNames>yes</supportsTrimSpriteNames>
+    
+    <!-- supports texture subpath -->
+    <supportsTextureSubPath>yes</supportsTextureSubPath>
+</exporter>
