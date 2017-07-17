@@ -104,6 +104,7 @@ def pack(relative_dir, current_dir, output_path, settings):
     data_extension = settings.get('data_extension', 'plist')
     input_directories = settings.get('input_directories', ['.'])
     combine_images = settings.get('combine_images', True)
+    input_extensions = settings.get('input_extensions', ['png', 'jpg'])
 
     # Input.
     input_paths = []
@@ -111,9 +112,12 @@ def pack(relative_dir, current_dir, output_path, settings):
         full_path = os.path.join(current_dir, input_dir)
         for item in os.listdir(full_path):
             path = os.path.join(full_path, item)
-            if path.endswith('.png') or path.endswith('.jpg'):
-                # PNG or JPG.
-                input_paths.append(path)
+            included = False
+            for extension in input_extensions:
+                if path.endswith('.%s' % extension):
+                    input_paths.append(path)
+                    included = True                
+                    break
 
     commands = []
     if combine_images:
