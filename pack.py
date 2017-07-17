@@ -67,6 +67,9 @@ def parse_command(settings):
             # Single options makes inheritance impossible.
             continue
         else:
+            if '--content-protection' in key and len(settings[key]) == 0:
+                continue
+
             # Must convert to string.
             command.extend([key, str(settings[key])])
 
@@ -84,6 +87,14 @@ def pack(relative_dir, current_dir, output_path, settings):
     premultiply_alpha = settings.get('premultiply_alpha', False)
     if premultiply_alpha:
         command.append('--premultiply-alpha')
+
+    auto_alias = settings.get('auto_alias', True)
+    if not auto_alias:
+        command.append('--disable-auto-alias')
+
+    force_identical_layout = settings.get('force-identical-layout', True)
+    if force_identical_layout:
+        command.append('--force-identical-layout')
 
     flatten_path = settings.get('flatten_path', True)
     if not flatten_path:
@@ -183,6 +194,7 @@ def process_commands(input_dir, output_dir):
     for command in commands:
         args = ['texturepacker']
         args.extend(command)
+        print args
         subprocesses.append(subprocess.Popen(args))
 
     # Wait for subprocesses.
