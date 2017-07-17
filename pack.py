@@ -92,7 +92,7 @@ def pack(relative_dir, current_dir, output_path, settings):
     if not auto_alias:
         command.append('--disable-auto-alias')
 
-    force_identical_layout = settings.get('force-identical-layout', True)
+    force_identical_layout = settings.get('force_identical_layout', False)
     if force_identical_layout:
         command.append('--force-identical-layout')
 
