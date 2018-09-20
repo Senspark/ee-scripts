@@ -8,6 +8,7 @@ import json
 import shutil
 import plistlib
 import argparse
+import io
 
 def read_sheet_data(doc_id, sheet_id):
     doc_url = "http://docs.google.com/spreadsheets/d/%s/gviz/tq?&tq&gid=%s&pref=2&pli=1" % (doc_id, sheet_id)
@@ -110,11 +111,20 @@ if __name__ == '__main__':
         required = True
     )
 
+    #format out json/plist
+    parser.add_argument(
+        '-f',
+        '--extension',
+        nargs = 1,
+        required = True
+    )
+
     args = parser.parse_args()
 
     doc_id = args.id[0]
     sheet_id = args.sid[0]
-    output_dir = args.out[0];
+    output_format = args.out[0];
+    extension = args.extension[0];
 
     data = read_sheet_data(doc_id, sheet_id)
     rows = get_number_of_rows(data)
@@ -123,15 +133,22 @@ if __name__ == '__main__':
     # print "rows = %d col = %d" % (rows, cols)
 
     for col in range(1, cols):
-        plist = dict()
-        raw_lang = get_cell(data, 0, col)
-        raw_sub_dir = get_cell(data, 1, col)
-        # print "lang = " + raw_lang
-        # print "sub_dir = " + raw_sub_dir
-        sub_dir = raw_sub_dir.encode('utf-8')
+        output_data = dict()
+        raw_lang = get_cell(data, 2, col)
+        sub_dir = raw_lang.encode('utf-8')
         for row in range(3, rows):
             raw_key = get_cell(data, row, 0)
             raw_value = get_cell(data, row, col)
-            plist[raw_key] = raw_value
-        path = os.path.join(output_dir, sub_dir)
-        plistlib.writePlist(plist, path)
+            output_data[raw_key] = raw_value
+
+        output_file = output_format % sub_dir
+        if extension == 'plist':
+            output_dir = os.path.dirname(output_file)
+            if os.path.exists(output_dir):
+                shutil.rmtree(output_dir)
+            os.makedirs(output_dir)
+            plistlib.writePlist(output_data, output_file)
+        else:
+            with io.open(output_file, 'w', encoding='utf8') as outfile:
+                unicodeData = json.dumps(output_data, ensure_ascii=False, indent=4)
+                outfile.write(unicode(unicodeData))
