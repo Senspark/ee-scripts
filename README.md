@@ -2,7 +2,30 @@
 
 *Author: Hai Hoang*
 
-## Pack
+## Pack V3
+
+- Config file: see `texture_packer_v3.json`.
+- Options:
+  - `params`: `ARRAY` of texture packer options <https://www.codeandweb.com/texturepacker/documentation/texture-settings>
+  - `auto_alias`: see v2. 
+  - `data_extension`: see v2.
+  - `force_identical_layout`: see v2.
+  - `input_files`: `ARRAY` of `ARRAY` of `STRING`: relative input images directories.
+  - `output_path`: `ARRAY` of `STRING`: relative output sheet/data files directory.
+  - `rotation`: see v2.
+  - `sheet_extension`: see v2.
+  - `children`: `ARRAY` of options: specify the children options.
+
+- pack.js: to run packer as client:
+  - `-t` or `--type`: specify the packer type: `remote` to pack remotely or `local` to pack locally.
+  - `-a` or `--address`: specify the remote packer, only required if type is remote.
+  - `-i` or `--input`: specify the input config file path.
+  - `-o` or `--output`: specify the output directory.
+  
+- pack_server.js: to run packer as server:
+  - Default port: 3456
+
+## Pack V2 (Deprecated)
 
 - See sample `texture_packer.json`.
 - Settings files (`.json`) in subdirectories are inherited from their parent directories.
