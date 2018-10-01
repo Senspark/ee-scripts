@@ -170,7 +170,6 @@ async function process(processor, configPath, outputDir) {
     // Parse options.
     const commands = totalOptions.reduce((array, options) => {
         array.push(...parseOptions(options, inputDir));
-        0
         return array;
     }, []);
 
