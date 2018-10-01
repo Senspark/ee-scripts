@@ -5,6 +5,7 @@
 ## Pack V3
 
 - Config file: see `texture_packer_v3.json`.
+
 - Options:
   - `params`: `ARRAY` of texture packer options <https://www.codeandweb.com/texturepacker/documentation/texture-settings>
   - `auto_alias`: see v2. 
@@ -16,14 +17,32 @@
   - `sheet_extension`: see v2.
   - `children`: `ARRAY` of options: specify the children options.
 
-- pack.js: to run packer as client:
+### Client packer
+- Run pack.js to run packer as client:
+
+- Prerequisite:
+  - npm i argparse
+  - npm i fs-extra
+  - npm i glob
+  - npm i jszip
+  - npm i xmlhttprequest
+
+- Command line:
   - `-t` or `--type`: specify the packer type: `remote` to pack remotely or `local` to pack locally.
   - `-a` or `--address`: specify the remote packer, only required if type is remote.
   - `-i` or `--input`: specify the input config file path.
   - `-o` or `--output`: specify the output directory.
-  
-- pack_server.js: to run packer as server:
-  - Default port: 3456
+
+### Server packer
+- Run pack_server.js to run packer as server:
+
+- Prerequisite:
+  - npm i body-parser
+  - npm i express
+  - npm i fs-extra
+  - npm i jszip
+
+- Note: default port is 3456
 
 ## Pack V2 (Deprecated)
 
