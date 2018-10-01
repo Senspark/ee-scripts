@@ -1,0 +1,47 @@
+{
+    "options": {
+        "auto_alias": true,
+        "combine_images": true,
+        "data_extension": "plist",
+        "flatten_path": true,
+        "force_identical_layout": false,
+        "input_files": [
+            ["images", "*.png"]
+        ],
+        "output_path": ["{v}", "my", "sheet", "path"],
+        "params": [
+            "--algorithm", "MaxRects",
+            "--border-padding", 2,
+            "--content-protection", "0123456789abcdef0123456789abcdef",
+            "--extrude", 1,
+            "--format", "cocos2d",
+            "--inner-padding", 0,
+            "--max-height", 2048,
+            "--max-width", 2048,
+            "--maxrects-heuristics", "Best",
+            "--opt", "RGBA8888",
+            "--pack-mode", "Best",
+            "--png-opt-level", 0,
+            "--scale-mode", "Smooth",
+            "--shape-padding", 4,
+            "--size-constraints", "POT",
+            "--texture-format", "pvr2ccz",
+            "--trim-mode", "Trim",
+            "--variant", "0.25:iphone",
+            "--variant", "0.50:iphonehd",
+            "--variant", "1.00:ipadhd"
+        ],
+        "rotation": true,
+        "sheet_extension": "pvr.ccz"
+    },
+    "children": [{
+        "options": {
+            "output_path": [
+                "{v}",
+                "my",
+                "sheet",
+                "path"
+            ]
+        }
+    }]
+}
