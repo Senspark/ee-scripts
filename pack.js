@@ -127,7 +127,7 @@ function parseOptions(options, inputDir) {
     const outputPath = options.output_path;
     if (!inputFilePatterns || !outputPath) {
         // No input or output specified.
-        return;
+        return [];
     }
 
     const params = options.params || [];
