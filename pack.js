@@ -1,12 +1,13 @@
 /** Pack version 3 */
 
+const ArgumentParser = require('argparse').ArgumentParser;
 const childProcess = require('child_process');
 const fetch = require('node-fetch');
 const fs = require('fs-extra');
 const glob = require('glob');
+const JSZip = require('jszip');
+const pako = require('pako');
 const path = require('path');
-const ArgumentParser = require('argparse').ArgumentParser;
-const zip = require('jszip');
 const util = require('util');
 
 class CommandProcessor {
@@ -55,17 +56,25 @@ class RemoteProcessor extends CommandProcessor {
 
         // Send request.
         const stringified = JSON.stringify(data);
-        console.log(stringified.length);
+        // Use pako with body-parser: https://github.com/expressjs/body-parser/issues/138
+        const compressed = pako.gzip(stringified, {
+            level: 9,
+            memLevel: 9,
+            windowBits: 15,
+        });
+        console.log(`request data size = ${stringified.length} compressed to ${compressed.length}`);
         const response = await fetch(this.address, {
-            body: stringified,
+            body: compressed,
             headers: {
-                'Content-Type': 'application/json;charset=UTF-8'
+                'Content-Encoding': 'gzip',
+                'Content-Type': 'application/json',
             },
             method: 'POST',
         }).then(res => res.text());
+        console.log(`response data size = ${response.length}`);
 
         await util.promisify(fs.ensureDir)(outputDir);
-        const archive = await zip.loadAsync(response, {
+        const archive = await JSZip.loadAsync(response, {
             base64: true,
         });
         await Promise.all(Object.keys(archive.files).map(async fileName => {
