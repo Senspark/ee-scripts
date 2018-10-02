@@ -27,12 +27,7 @@ const walkSync = (dir, filelist = []) => {
     return filelist;
 }
 
-const app = express();
-app.use(bodyParser.json({
-    limit: 1024 * 1024 * 50 // 50MB.
-}));
-
-app.post('/', async (request, response) => {
+async function handleRequest(request, response) {
     const watch = new StopWatch();
     const time = new Date().getTime();
     const tempDir = path.join(__dirname, `temp_${time.toString()}`);
@@ -94,6 +89,15 @@ app.post('/', async (request, response) => {
     } finally {
         await util.promisify(fs.remove)(tempDir);
     }
+}
+
+const app = express();
+app.use(bodyParser.json({
+    limit: 1024 * 1024 * 50 // 50MB.
+}));
+
+app.post('/', async (request, response) => {
+    await handleRequest(request, response);
 });
 
 const server = app.listen(3456, function () {
