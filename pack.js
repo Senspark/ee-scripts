@@ -43,7 +43,6 @@ class Cache {
 
     /** Checks whether it is necessary to process specified command. */
     async check(data, outputDir) {
-        const x = JSON.stringify(data);
         const dataHash = md5(JSON.stringify(data));
         const files = await this._readValue(dataHash);
         if (!files) {
