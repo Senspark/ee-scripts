@@ -58,8 +58,15 @@ async function handleRequest(request, response) {
         }));
         console.log(`${requestId}: start packing`);
         watch.start();
-        await util.promisify(childProcess.exec)(params.join(' '));
-        console.log(`${requestId}: end packing elapsed ${watch.stop()}`);
+        try {
+            await util.promisify(childProcess.exec)(params.join(' '));
+            console.log(`${requestId}: end packing elapsed ${watch.stop()}`);
+        } catch (ex) {
+            response.send({
+                error: ex.toString()
+            });
+            return;
+        }
 
         // Compress and send response.
         console.log(`${requestId}: start compressing`);
@@ -85,7 +92,9 @@ async function handleRequest(request, response) {
         });
         console.log(`${requestId}: end compressing elapsed ${watch.stop()}`);
         console.log(`${requestId}: reply`);
-        response.send(content);
+        response.send({
+            result: content
+        });
     } finally {
         await util.promisify(fs.remove)(tempDir);
     }
