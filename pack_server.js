@@ -52,7 +52,7 @@ app.post('/', async (request, response) => {
 
     try {
         // Start packing.
-        fs.mkdirSync(inputDir);
+        await util.promisify(fs.mkdir)(inputDir);
         await Promise.all(body.files.map(async item => {
             const filePath = path.join(inputDir, item.name);
             params.push(filePath);
@@ -61,9 +61,9 @@ app.post('/', async (request, response) => {
                 flag: 'w'
             });
         }));
-        childProcess.execSync(params.join(' '));
         console.log(`${requestId}: start packing`);
         watch.start();
+        await util.promisify(childProcess.exec)(params.join(' '));
         console.log(`${requestId}: end packing elapsed ${watch.stop()}`);
 
         // Compress and send response.
