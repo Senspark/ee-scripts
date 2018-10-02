@@ -25,7 +25,7 @@
   - npm i fs-extra
   - npm i glob
   - npm i jszip
-  - npm i xmlhttprequest
+  - npm i node-fetch
 
 - Command line:
   - `-t` or `--type`: specify the packer type: `remote` to pack remotely or `local` to pack locally.

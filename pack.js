@@ -1,11 +1,11 @@
 /** Pack version 3 */
 
 const childProcess = require('child_process');
+const fetch = require('node-fetch');
 const fs = require('fs-extra');
 const glob = require('glob');
 const path = require('path');
 const ArgumentParser = require('argparse').ArgumentParser;
-const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
 const zip = require('jszip');
 const util = require('util');
 
@@ -53,31 +53,30 @@ class RemoteProcessor extends CommandProcessor {
             });
         }));
 
-        const xmlHttp = new XMLHttpRequest();
-        xmlHttp.open('POST', this.address, false);
-        xmlHttp.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-        xmlHttp.onreadystatechange = async function () {
-            if (this.readyState === 4 && this.status === 200) {
-                await util.promisify(fs.ensureDir)(outputDir);
-                const response = xmlHttp.responseText;
-                await zip.loadAsync(response, {
-                    base64: true,
-                }).then(async item => {
-                    await Promise.all(Object.keys(item.files).map(async fileName => {
-                        const filePath = path.join(outputDir, fileName);
-                        await util.promisify(fs.ensureDir)(path.dirname(filePath));
-                        const file = item.files[fileName];
-                        const content = await file.async('base64');
-                        await util.promisify(fs.writeFile)(filePath, content, {
-                            encoding: 'base64'
-                        });
-                    }));
-                });
-            }
-        };
-
+        // Send request.
         const stringified = JSON.stringify(data);
-        xmlHttp.send(stringified);
+        console.log(stringified.length);
+        const response = await fetch(this.address, {
+            body: stringified,
+            headers: {
+                'Content-Type': 'application/json;charset=UTF-8'
+            },
+            method: 'POST',
+        }).then(res => res.text());
+
+        await util.promisify(fs.ensureDir)(outputDir);
+        const archive = await zip.loadAsync(response, {
+            base64: true,
+        });
+        await Promise.all(Object.keys(archive.files).map(async fileName => {
+            const filePath = path.join(outputDir, fileName);
+            await util.promisify(fs.ensureDir)(path.dirname(filePath));
+            const file = archive.files[fileName];
+            const content = await file.async('base64');
+            await util.promisify(fs.writeFile)(filePath, content, {
+                encoding: 'base64'
+            });
+        }));
     }
 }
 
