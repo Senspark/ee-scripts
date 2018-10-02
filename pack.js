@@ -59,8 +59,8 @@ class Cache {
             if (fileHash !== currentFileHash) {
                 return true;
             }
-            return false;
         }
+        return false;
     }
 
     /** Stores the specified command and its result to the cache. */
