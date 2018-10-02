@@ -158,11 +158,16 @@ class RemoteProcessor extends CommandProcessor {
                 'Content-Type': 'application/json',
             },
             method: 'POST',
-        }).then(res => res.text());
-        console.log(`${requestId}: response data size = ${response.length}`);
+        }).then(res => res.json());
+        console.log(`${requestId}: response data size = ${JSON.stringify(response).length}`);
+
+        if (response.error) {
+            console.log(`${requestId}: ${response.error}`);
+            return;
+        }
 
         await util.promisify(fs.ensureDir)(outputDir);
-        const archive = await JSZip.loadAsync(response, {
+        const archive = await JSZip.loadAsync(response.result, {
             base64: true,
         });
         const files = Object.keys(archive.files);
