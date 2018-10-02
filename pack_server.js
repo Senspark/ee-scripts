@@ -6,6 +6,17 @@ const JSZip = require('jszip');
 const path = require('path');
 const util = require('util');
 
+class StopWatch {
+    start() {
+        this.begin = new Date().getTime();
+    }
+
+    stop() {
+        const end = new Date().getTime();
+        return end - this.begin;
+    }
+}
+
 /** https://gist.github.com/kethinov/6658166 */
 const walkSync = (dir, filelist = []) => {
     fs.readdirSync(dir).forEach(file => {
@@ -22,6 +33,7 @@ app.use(bodyParser.json({
 }));
 
 app.post('/', async (request, response) => {
+    const watch = new StopWatch();
     const time = new Date().getTime();
     const tempDir = path.join(__dirname, `temp_${time.toString()}`);
     const inputDir = path.join(tempDir, 'input');
@@ -29,6 +41,9 @@ app.post('/', async (request, response) => {
     await util.promisify(fs.mkdir)(tempDir);
 
     const body = request.body;
+    const requestId = body.sheet;
+    console.log(`${requestId}: receiving request`);
+
     const params = [];
     params.push('texturepacker');
     params.push(...body.params);
@@ -47,8 +62,13 @@ app.post('/', async (request, response) => {
             });
         }));
         childProcess.execSync(params.join(' '));
+        console.log(`${requestId}: start packing`);
+        watch.start();
+        console.log(`${requestId}: end packing elapsed ${watch.stop()}`);
 
         // Compress and send response.
+        console.log(`${requestId}: start compressing`);
+        watch.start();
         const zip = new JSZip();
         const files = walkSync(outputDir);
         await Promise.all(files.map(async file => {
@@ -68,6 +88,8 @@ app.post('/', async (request, response) => {
             },
             type: 'base64'
         });
+        console.log(`${requestId}: end compressing elapsed ${watch.stop()}`);
+        console.log(`${requestId}: reply`);
         response.send(content);
     } finally {
         await util.promisify(fs.remove)(tempDir);
