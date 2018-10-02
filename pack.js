@@ -6,9 +6,83 @@ const fetch = require('node-fetch');
 const fs = require('fs-extra');
 const glob = require('glob');
 const JSZip = require('jszip');
+const md5 = require('md5');
 const pako = require('pako');
 const path = require('path');
 const util = require('util');
+
+class Cache {
+    _getCachePath() {
+        return path.join(__dirname, `.pack_cache.json`);
+    }
+
+    async _readValue(key) {
+        const path = this._getCachePath();
+        try {
+            const content = await fs.readJson(path);
+            return content[key];
+        } catch {
+            // File not exist or not JSON.
+            return undefined;
+        }
+    }
+
+    async _setValue(key, value) {
+        const path = this._getCachePath();
+        try {
+            const content = await fs.readJson(path);
+            content[key] = value;
+            await fs.writeJSON(path, content);
+        } catch {
+            // File not exist or not JSON.
+            await fs.writeJSON(path, {
+                [key]: value
+            });
+        }
+    }
+
+    /** Checks whether it is necessary to process specified command. */
+    async check(data, outputDir) {
+        const x = JSON.stringify(data);
+        const dataHash = md5(JSON.stringify(data));
+        const files = await this._readValue(dataHash);
+        if (!files) {
+            return true;
+        }
+        for (let i = 0, n = files.length; i < n; ++i) {
+            const fileName = files[i].name;
+            const fileHash = files[i].hash;
+            const filePath = path.join(outputDir, fileName);
+            const content = await util.promisify(fs.readFile)(filePath, {
+                encoding: 'base64'
+            });
+            const currentFileHash = md5(content);
+            if (fileHash !== currentFileHash) {
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /** Stores the specified command and its result to the cache. */
+    async store(data, outputDir, files) {
+        const dataHash = md5(JSON.stringify(data));
+        const items = [];
+        for (let i = 0, n = files.length; i < n; ++i) {
+            const fileName = files[i];
+            const filePath = path.join(outputDir, fileName);
+            const content = await util.promisify(fs.readFile)(filePath, {
+                encoding: 'base64'
+            });
+            const fileHash = md5(content);
+            items.push({
+                name: fileName,
+                hash: fileHash
+            });
+        }
+        await this._setValue(dataHash, items);
+    }
+}
 
 class CommandProcessor {
     /** Asynchronously process the specified options. */
@@ -30,10 +104,12 @@ class LocalProcessor extends CommandProcessor {
     }
 }
 
+/** Packs using remote TexturePacker. */
 class RemoteProcessor extends CommandProcessor {
     constructor(address) {
         super();
         this.address = address;
+        this.cache = new Cache();
     }
 
     async process(command, outputDir) {
@@ -41,6 +117,9 @@ class RemoteProcessor extends CommandProcessor {
         data.params = command.params;
         data.sheet = command.sheet;
         data.data = command.data;
+
+        const requestId = data.sheet;
+        console.log(`${requestId}: start packing`);
 
         // Basename and Base64-encoded data of files.
         await Promise.all(command.files.map(async item => {
@@ -54,6 +133,16 @@ class RemoteProcessor extends CommandProcessor {
             });
         }));
 
+        // Ensure the same order between packings.
+        data.files.sort((lhs, rhs) => {
+            return lhs.name.localeCompare(rhs.name);
+        });
+
+        if (!await this.cache.check(data, outputDir)) {
+            console.log(`${requestId}: already updated.`);
+            return;
+        }
+
         // Send request.
         const stringified = JSON.stringify(data);
         // Use pako with body-parser: https://github.com/expressjs/body-parser/issues/138
@@ -62,7 +151,7 @@ class RemoteProcessor extends CommandProcessor {
             memLevel: 9,
             windowBits: 15,
         });
-        console.log(`request data size = ${stringified.length} compressed to ${compressed.length}`);
+        console.log(`${requestId}: request data size = ${stringified.length} compressed to ${compressed.length}`);
         const response = await fetch(this.address, {
             body: compressed,
             headers: {
@@ -71,13 +160,14 @@ class RemoteProcessor extends CommandProcessor {
             },
             method: 'POST',
         }).then(res => res.text());
-        console.log(`response data size = ${response.length}`);
+        console.log(`${requestId}: response data size = ${response.length}`);
 
         await util.promisify(fs.ensureDir)(outputDir);
         const archive = await JSZip.loadAsync(response, {
             base64: true,
         });
-        await Promise.all(Object.keys(archive.files).map(async fileName => {
+        const files = Object.keys(archive.files);
+        await Promise.all(files.map(async fileName => {
             const filePath = path.join(outputDir, fileName);
             await util.promisify(fs.ensureDir)(path.dirname(filePath));
             const file = archive.files[fileName];
@@ -86,6 +176,7 @@ class RemoteProcessor extends CommandProcessor {
                 encoding: 'base64'
             });
         }));
+        await this.cache.store(data, outputDir, files);
     }
 }
 
