@@ -20,12 +20,7 @@
 ### Client packer
 - Run pack.js to run packer as client:
 
-- Prerequisite:
-  - npm i argparse
-  - npm i fs-extra
-  - npm i glob
-  - npm i jszip
-  - npm i node-fetch
+- Prerequisite: `npm i argparse fs-extra glob jszip node-fetch md5 pako`
 
 - Command line:
   - `-t` or `--type`: specify the packer type: `remote` to pack remotely or `local` to pack locally.
@@ -36,11 +31,7 @@
 ### Server packer
 - Run pack_server.js to run packer as server:
 
-- Prerequisite:
-  - npm i body-parser
-  - npm i express
-  - npm i fs-extra
-  - npm i jszip
+- Prerequisite: `npm i body-parser express fs-extra jszip`
 
 - Note: default port is 3456
 
