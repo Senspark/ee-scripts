@@ -109,6 +109,9 @@ const app = express();
 app.use(bodyParser.json({
     limit: 1024 * 1024 * 50 // 50MB.
 }));
+app.get('/check', (request, response) => {
+    response.sendStatus(200);
+});
 app.post('/android', async (request, response) => {
     const body = request.body;
     const purchaseToken = body.purchaseToken;
@@ -162,4 +165,4 @@ const server = app.listen(5556, function () {
     const host = server.address().address;
     const port = server.address().port;
     console.log(`Server-side verification in-app purchases server listener at http://${host}:${port}`);
-})
+});
