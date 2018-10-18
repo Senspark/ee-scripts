@@ -98,7 +98,7 @@ async function validateGoogle(receipt, token) {
     });
 }
 
-iap.config();
+iap.config({});
 iap.setup().then(() => {
     console.log(`Setup server successfully.`);
 }).catch(error => {
