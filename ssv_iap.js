@@ -1,3 +1,4 @@
+const ArgumentParser = require('argparse').ArgumentParser;
 const bodyParser = require('body-parser');
 const express = require('express');
 const iap = require('in-app-purchase');
@@ -6,6 +7,32 @@ const util = require('util');
 
 const SUCCESS = 0;
 const FAILURE = 1;
+
+/** Parses arguments from command line. */
+function parseArguments() {
+    const parser = new ArgumentParser();
+    parser.addArgument(['-p', '--port'], {
+        nargs: 1,
+        required: true,
+        type: Number,
+    });
+    parser.addArgument(['-d', '--debug'], {
+        action: 'storeTrue',
+        defaultValue: false,
+        required: false,
+    });
+    const args = parser.parseArgs();
+    console.dir(args);
+    return {
+        port: args.port[0],
+        debug: !!args.debug,
+    }
+}
+
+const {
+    port: PORT,
+    debug: DEBUG,
+} = parseArguments();
 
 /** Gets the Google IAP validation URL. */
 function getValidationUrl(receipt, token) {
@@ -33,7 +60,11 @@ function getValidationUrl(receipt, token) {
 function handlePromisedFunctionCb(resolve, reject) {
     return function _handlePromisedCallback(error, response) {
         if (error) {
-            const errorData = { error: error, status: null, message: null };
+            const errorData = {
+                error: error,
+                status: null,
+                message: null
+            };
             if (response !== null && typeof response === 'object') {
                 errorData.status = response.status;
                 errorData.message = response.message;
@@ -118,6 +149,7 @@ app.post('/android', async (request, response) => {
     const packageName = body.packageName;
     const productId = body.productId;
     const accessToken = body.accessToken;
+    DEBUG && console.log(`Receive Android request: token = ${purchaseToken} package = ${packageName} ID = ${productId}`);
     try {
         const res = await validateGoogle({
             purchaseToken,
@@ -143,6 +175,7 @@ app.post('/ios', async (request, response) => {
     const body = request.body;
     const receiptData = body.receipt_base64;
     const productId = body.productId; // Unused.
+    DEBUG && console.log(`Receive Android request: data = ${receiptData} ID = ${productId}`);
     try {
         const res = await iap.validate(receiptData);
         if (iap.isValidated(res)) {
@@ -161,7 +194,7 @@ app.post('/ios', async (request, response) => {
     };
 });
 
-const server = app.listen(5556, function () {
+const server = app.listen(PORT, function () {
     const host = server.address().address;
     const port = server.address().port;
     console.log(`Server-side verification in-app purchases server listener at http://${host}:${port}`);
