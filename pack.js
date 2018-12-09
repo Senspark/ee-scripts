@@ -70,7 +70,7 @@ class Cache {
         for (let i = 0, n = files.length; i < n; ++i) {
             const fileName = files[i];
             const filePath = path.join(outputDir, fileName);
-            const content = await util.promisify(fs.readFile)(filePath, {
+            const content = await fs.readFile(filePath, {
                 encoding: 'base64'
             });
             const fileHash = md5(content);
@@ -123,7 +123,7 @@ class RemoteProcessor extends CommandProcessor {
         // Basename and Base64-encoded data of files.
         await Promise.all(command.files.map(async item => {
             data.files = data.files || [];
-            const content = await util.promisify(fs.readFile)(item, {
+            const content = await fs.readFile(item, {
                 encoding: 'base64'
             });
             data.files.push({
@@ -166,17 +166,17 @@ class RemoteProcessor extends CommandProcessor {
             return;
         }
 
-        await util.promisify(fs.ensureDir)(outputDir);
+        await fs.ensureDir(outputDir);
         const archive = await JSZip.loadAsync(response.result, {
             base64: true,
         });
         const files = Object.keys(archive.files);
         await Promise.all(files.map(async fileName => {
             const filePath = path.join(outputDir, fileName);
-            await util.promisify(fs.ensureDir)(path.dirname(filePath));
+            await fs.ensureDir(path.dirname(filePath));
             const file = archive.files[fileName];
             const content = await file.async('base64');
-            await util.promisify(fs.writeFile)(filePath, content, {
+            await fs.writeFile(filePath, content, {
                 encoding: 'base64'
             });
         }));
