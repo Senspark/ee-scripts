@@ -33,7 +33,7 @@ async function handleRequest(request, response) {
     const tempDir = path.join(__dirname, `temp_${time.toString()}`);
     const inputDir = path.join(tempDir, 'input');
     const outputDir = path.join(tempDir, 'output');
-    await util.promisify(fs.mkdir)(tempDir);
+    await fs.mkdir(tempDir);
 
     const body = request.body;
     const requestId = body.sheet;
@@ -47,11 +47,11 @@ async function handleRequest(request, response) {
 
     try {
         // Start packing.
-        await util.promisify(fs.mkdir)(inputDir);
+        await fs.mkdir(inputDir);
         await Promise.all(body.files.map(async item => {
             const filePath = path.join(inputDir, item.name);
             params.push(filePath);
-            await util.promisify(fs.writeFile)(filePath, item.data, {
+            await fs.writeFile(filePath, item.data, {
                 encoding: 'base64',
                 flag: 'w'
             });
@@ -75,7 +75,7 @@ async function handleRequest(request, response) {
         const files = walkSync(outputDir);
         await Promise.all(files.map(async file => {
             const relativePath = path.relative(outputDir, file);
-            const content = await util.promisify(fs.readFile)(file, {
+            const content = await fs.readFile(file, {
                 encoding: 'base64'
             });
             zip.file(relativePath, content, {
@@ -96,7 +96,7 @@ async function handleRequest(request, response) {
             result: content
         });
     } finally {
-        await util.promisify(fs.remove)(tempDir);
+        await fs.remove(tempDir);
     }
 }
 
