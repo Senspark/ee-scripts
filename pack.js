@@ -52,11 +52,16 @@ class Cache {
             const fileName = files[i].name;
             const fileHash = files[i].hash;
             const filePath = path.join(outputDir, fileName);
-            const content = await util.promisify(fs.readFile)(filePath, {
-                encoding: 'base64'
-            });
-            const currentFileHash = md5(content);
-            if (fileHash !== currentFileHash) {
+            try {
+                const content = await fs.readFile(filePath, {
+                    encoding: 'base64'
+                });
+                const currentFileHash = md5(content);
+                if (fileHash !== currentFileHash) {
+                    return true;
+                }
+            } catch (ex) {
+                // File not found.
                 return true;
             }
         }
