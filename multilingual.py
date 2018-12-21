@@ -150,5 +150,5 @@ if __name__ == '__main__':
             plistlib.writePlist(output_data, output_file)
         else:
             with io.open(output_file, 'w', encoding='utf8') as outfile:
-                unicodeData = json.dumps(output_data, ensure_ascii=False, indent=4)
+                unicodeData = json.dumps(output_data, sort_keys=True, ensure_ascii=False, indent=4, separators=(',',': '))
                 outfile.write(unicode(unicodeData))
