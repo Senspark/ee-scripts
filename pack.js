@@ -237,8 +237,16 @@ function parseOptions(options, inputDir) {
         // No input or output specified.
         return [];
     }
-
-    const params = options.params || [];
+    const params = [];
+    if (options.params) {
+        options.params.forEach(item => {
+            if (item instanceof Array) {
+                params.push(...item);
+            } else {
+                params.push(item);
+            }
+        });
+    }
     if (options.rotation) {
         params.push('--enable-rotation');
     } else {
