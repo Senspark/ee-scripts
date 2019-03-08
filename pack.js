@@ -1,5 +1,6 @@
 /** Pack version 3 */
 
+const assert = require('assert');
 const ArgumentParser = require('argparse').ArgumentParser;
 const childProcess = require('child_process');
 const fetch = require('node-fetch');
@@ -12,10 +13,16 @@ const path = require('path');
 const util = require('util');
 
 class Cache {
+    /** @returns {string} The pack cache path. */
     _getCachePath() {
         return path.join(__dirname, `.pack_cache.json`);
     }
 
+    /**
+     * Reads value for the specified key.
+     * @param {string} key The desired key.
+     * @returns {Promise<string | undefined>} The value for the specified key.
+     */
     async _readValue(key) {
         const path = this._getCachePath();
         try {
@@ -27,6 +34,11 @@ class Cache {
         }
     }
 
+    /**
+     * Sets value for the specified key.
+     * @param {string} key The desired key.
+     * @param {any} value The value for the desired key.
+     */
     async _setValue(key, value) {
         const path = this._getCachePath();
         try {
@@ -40,8 +52,11 @@ class Cache {
             });
         }
     }
-
-    /** Checks whether it is necessary to process specified command. */
+    /**
+     * Checks whether it is necessary to process specified command.
+     * @param {any} data
+     * @param {string} outputDir
+     */
     async check(data, outputDir) {
         const dataHash = md5(JSON.stringify(data));
         const files = await this._readValue(dataHash);
@@ -89,8 +104,12 @@ class Cache {
 }
 
 class CommandProcessor {
-    /** Asynchronously process the specified options. */
-    async process(command) {
+    /**
+     * Asynchronously process the specified options.
+     * @param {any} command
+     * @param {string} outputDir
+     */
+    async process(command, outputDir) {
         throw new Error('Abstract method.');
     }
 }
@@ -110,6 +129,9 @@ class LocalProcessor extends CommandProcessor {
 
 /** Packs using remote TexturePacker. */
 class RemoteProcessor extends CommandProcessor {
+    /**
+     * @param {string} address 
+     */
     constructor(address) {
         super();
         this.address = address;
@@ -226,6 +248,44 @@ function dfsNode(node, parentOptions = {}) {
 }
 
 /**
+ * @param {Array<string | number>} params 
+ */
+function flattenParams(params) {
+    const uniqueParams = {};
+    const assign = (key, value) => {
+        let values = uniqueParams[key];
+        values = values || [];
+        if (key === '--variant') {
+            // Allow multiple values.
+            values.push(value);
+        } else {
+            if (values.length === 0) {
+                values = [value];
+            }
+        }
+        uniqueParams[key] = values;
+    }
+    let currentValue = undefined;
+    // Prefer later parameters.
+    for (let i = params.length - 1; i >= 0; --i) {
+        const param = params[i];
+        if (typeof param === `string` && param.startsWith(`--`)) {
+            assert(currentValue !== undefined);
+            assign(param, currentValue);
+            currentValue = undefined;
+        } else {
+            currentValue = param;
+        }
+    }
+    const results = [];
+    Object.keys(uniqueParams).forEach(key => {
+        uniqueParams[key].forEach(item => {
+            results.push(...[key, item]);
+        })
+    });
+    return results;
+}
+/**
  * Parses the specified options and returns an array of commands.
  * @param options The desired options.
  * @param outputDir The desired output directory.
@@ -247,16 +307,17 @@ function parseOptions(options, inputDir) {
             }
         });
     }
+    const flattenedParams = flattenParams(params);
     if (options.rotation) {
-        params.push('--enable-rotation');
+        flattenedParams.push('--enable-rotation');
     } else {
-        params.push('--disable-rotation');
+        flattenedParams.push('--disable-rotation');
     }
     if (options.auto_alias) {
-        params.push('--disable-auto-alias');
+        flattenedParams.push('--disable-auto-alias');
     }
     if (options.force_identical_layout) {
-        params.push('--force-identical-layout');
+        flattenedParams.push('--force-identical-layout');
     }
     const sheetExtension = options.sheet_extension || 'pvr.ccz';
     const dataExtension = options.data_extension || 'plist';
@@ -268,7 +329,7 @@ function parseOptions(options, inputDir) {
         inputFiles.push(...files);
     });
     return [{
-        params: params,
+        params: flattenedParams,
         files: inputFiles,
         sheet: `${path.join(...outputPath)}.${sheetExtension}`,
         data: `${path.join(...outputPath)}.${dataExtension}`,
