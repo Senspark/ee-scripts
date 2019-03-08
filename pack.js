@@ -1,7 +1,7 @@
 /** Pack version 3 */
-
-const assert = require('assert');
 const ArgumentParser = require('argparse').ArgumentParser;
+const { Mutex } = require('async-mutex');
+const assert = require('assert');
 const childProcess = require('child_process');
 const fetch = require('node-fetch');
 const fs = require('fs-extra');
@@ -13,6 +13,9 @@ const path = require('path');
 const util = require('util');
 
 class Cache {
+    constructor() {
+        this.mutex = new Mutex();
+    }
     /** @returns {string} The pack cache path. */
     _getCachePath() {
         return path.join(__dirname, `.pack_cache.json`);
@@ -24,12 +27,15 @@ class Cache {
      * @returns {Promise<string | undefined>} The value for the specified key.
      */
     async _readValue(key) {
+        const release = await this.mutex.acquire();
         const path = this._getCachePath();
         try {
             const content = await fs.readJson(path);
+            release();
             return content[key];
-        } catch {
+        } catch (ex) {
             // File not exist or not JSON.
+            release();
             return undefined;
         }
     }
@@ -40,17 +46,19 @@ class Cache {
      * @param {any} value The value for the desired key.
      */
     async _setValue(key, value) {
+        const release = await this.mutex.acquire();
         const path = this._getCachePath();
         try {
             const content = await fs.readJson(path);
             content[key] = value;
             await fs.writeJSON(path, content);
-        } catch {
+        } catch (ex) {
             // File not exist or not JSON.
             await fs.writeJSON(path, {
                 [key]: value
             });
         }
+        release();
     }
     /**
      * Checks whether it is necessary to process specified command.
@@ -277,11 +285,18 @@ function flattenParams(params) {
             currentValue = param;
         }
     }
-    const results = [];
+    const paramPairs = [];
     Object.keys(uniqueParams).forEach(key => {
         uniqueParams[key].forEach(item => {
-            results.push(...[key, item]);
+            paramPairs.push([key, item]);
         })
+    });
+    paramPairs.sort((lhs, rhs) => {
+        return JSON.stringify(lhs).localeCompare(JSON.stringify(rhs));
+    });
+    const results = [];
+    paramPairs.forEach(pair => {
+        results.push(...pair);
     });
     return results;
 }

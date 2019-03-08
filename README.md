@@ -20,7 +20,7 @@
 ### Client packer
 - Run pack.js to run packer as client:
 
-- Prerequisite: `npm i argparse fs-extra glob jszip node-fetch md5 pako`
+- Prerequisite: `npm i argparse async-mutex fs-extra glob jszip node-fetch md5 pako`
 
 - Command line:
   - `-t` or `--type`: specify the packer type: `remote` to pack remotely or `local` to pack locally.
