@@ -36,8 +36,8 @@ const {
 
 /** Gets the Google IAP validation URL. */
 function getValidationUrl(receipt, token) {
-    const PRODUCT_VAL = 'https://www.googleapis.com/androidpublisher/v2/applications/%s/purchases/products/%s/tokens/%s?access_token=%s';
-    const SUBSCR_VAL = 'https://www.googleapis.com/androidpublisher/v2/applications/%s/purchases/subscriptions/%s/tokens/%s?access_token=%s';
+    const PRODUCT_VAL = 'https://www.googleapis.com/androidpublisher/v3/applications/%s/purchases/products/%s/tokens/%s?access_token=%s';
+    const SUBSCR_VAL = 'https://www.googleapis.com/androidpublisher/v3/applications/%s/purchases/subscriptions/%s/tokens/%s?access_token=%s';
     let url = '';
     switch (receipt.subscription) {
         case true:
@@ -69,7 +69,7 @@ function handlePromisedFunctionCb(resolve, reject) {
                 errorData.status = response.status;
                 errorData.message = response.message;
             }
-            return reject(JSON.stringify(errorData));
+            return reject(JSON.stringify(errorData), response);
         }
         return resolve(response);
     };
