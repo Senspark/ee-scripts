@@ -142,11 +142,9 @@ if __name__ == '__main__':
             output_data[raw_key] = raw_value
 
         output_file = output_format % sub_dir
+        output_dir = os.path.dirname(output_file)
+        os.makedirs(output_dir)
         if extension == 'plist':
-            output_dir = os.path.dirname(output_file)
-            if os.path.exists(output_dir):
-                shutil.rmtree(output_dir)
-            os.makedirs(output_dir)
             plistlib.writePlist(output_data, output_file)
         else:
             with io.open(output_file, 'w', encoding='utf8') as outfile:
