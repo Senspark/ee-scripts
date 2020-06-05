@@ -132,6 +132,7 @@ if __name__ == '__main__':
 
     # print "rows = %d col = %d" % (rows, cols)
 
+    removed_dirs = set()
     for col in range(1, cols):
         output_data = dict()
         raw_lang = get_cell(data, 2, col)
@@ -143,7 +144,11 @@ if __name__ == '__main__':
 
         output_file = output_format % sub_dir
         output_dir = os.path.dirname(output_file)
-        os.makedirs(output_dir)
+        if os.path.exists(output_dir) and output_dir not in removed_dirs:
+            shutil.rmtree(output_dir)
+            os.makedirs(output_dir)
+            removed_dirs.add(output_dir)
+
         if extension == 'plist':
             plistlib.writePlist(output_data, output_file)
         else:
