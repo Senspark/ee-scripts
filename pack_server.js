@@ -27,6 +27,10 @@ const walkSync = (dir, filelist = []) => {
     return filelist;
 }
 
+const escapePath = (path) => {
+    return path.replace(' ', '\\ ');
+}
+
 async function handleRequest(request, response) {
     const watch = new StopWatch();
     const time = new Date().getTime();
@@ -40,17 +44,17 @@ async function handleRequest(request, response) {
     console.log(`${requestId}: receiving request`);
 
     const params = [];
-    params.push('texturepacker');
+    params.push('/usr/local/bin/texturepacker');
     params.push(...body.params);
-    params.push(...['--sheet', path.join(outputDir, body.sheet)]);
-    params.push(...['--data', path.join(outputDir, body.data)]);
+    params.push(...['--sheet', escapePath(path.join(outputDir, body.sheet))]);
+    params.push(...['--data', escapePath(path.join(outputDir, body.data))]);
 
     try {
         // Start packing.
         await util.promisify(fs.mkdir)(inputDir);
         await Promise.all(body.files.map(async item => {
             const filePath = path.join(inputDir, item.name);
-            params.push(filePath);
+            params.push(escapePath(filePath));
             await util.promisify(fs.writeFile)(filePath, item.data, {
                 encoding: 'base64',
                 flag: 'w'
