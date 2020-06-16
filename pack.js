@@ -1,6 +1,7 @@
 /** Pack version 3 */
-
 const ArgumentParser = require('argparse').ArgumentParser;
+const { Mutex } = require('async-mutex');
+const assert = require('assert');
 const childProcess = require('child_process');
 const fetch = require('node-fetch');
 const fs = require('fs-extra');
@@ -12,36 +13,58 @@ const path = require('path');
 const util = require('util');
 
 class Cache {
+    constructor() {
+        this.mutex = new Mutex();
+    }
+    /** @returns {string} The pack cache path. */
     _getCachePath() {
         return path.join(__dirname, `.pack_cache.json`);
     }
 
+    /**
+     * Reads value for the specified key.
+     * @param {string} key The desired key.
+     * @returns {Promise<string | undefined>} The value for the specified key.
+     */
     async _readValue(key) {
+        const release = await this.mutex.acquire();
         const path = this._getCachePath();
         try {
             const content = await fs.readJson(path);
+            release();
             return content[key];
-        } catch {
+        } catch (ex) {
             // File not exist or not JSON.
+            release();
             return undefined;
         }
     }
 
+    /**
+     * Sets value for the specified key.
+     * @param {string} key The desired key.
+     * @param {any} value The value for the desired key.
+     */
     async _setValue(key, value) {
+        const release = await this.mutex.acquire();
         const path = this._getCachePath();
         try {
             const content = await fs.readJson(path);
             content[key] = value;
             await fs.writeJSON(path, content);
-        } catch {
+        } catch (ex) {
             // File not exist or not JSON.
             await fs.writeJSON(path, {
                 [key]: value
             });
         }
+        release();
     }
-
-    /** Checks whether it is necessary to process specified command. */
+    /**
+     * Checks whether it is necessary to process specified command.
+     * @param {any} data
+     * @param {string} outputDir
+     */
     async check(data, outputDir) {
         const dataHash = md5(JSON.stringify(data));
         const files = await this._readValue(dataHash);
@@ -52,11 +75,16 @@ class Cache {
             const fileName = files[i].name;
             const fileHash = files[i].hash;
             const filePath = path.join(outputDir, fileName);
-            const content = await util.promisify(fs.readFile)(filePath, {
-                encoding: 'base64'
-            });
-            const currentFileHash = md5(content);
-            if (fileHash !== currentFileHash) {
+            try {
+                const content = await fs.readFile(filePath, {
+                    encoding: 'base64'
+                });
+                const currentFileHash = md5(content);
+                if (fileHash !== currentFileHash) {
+                    return true;
+                }
+            } catch (ex) {
+                // File not found.
                 return true;
             }
         }
@@ -70,7 +98,7 @@ class Cache {
         for (let i = 0, n = files.length; i < n; ++i) {
             const fileName = files[i];
             const filePath = path.join(outputDir, fileName);
-            const content = await util.promisify(fs.readFile)(filePath, {
+            const content = await fs.readFile(filePath, {
                 encoding: 'base64'
             });
             const fileHash = md5(content);
@@ -84,8 +112,12 @@ class Cache {
 }
 
 class CommandProcessor {
-    /** Asynchronously process the specified options. */
-    async process(command) {
+    /**
+     * Asynchronously process the specified options.
+     * @param {any} command
+     * @param {string} outputDir
+     */
+    async process(command, outputDir) {
         throw new Error('Abstract method.');
     }
 }
@@ -105,6 +137,9 @@ class LocalProcessor extends CommandProcessor {
 
 /** Packs using remote TexturePacker. */
 class RemoteProcessor extends CommandProcessor {
+    /**
+     * @param {string} address 
+     */
     constructor(address) {
         super();
         this.address = address;
@@ -123,7 +158,7 @@ class RemoteProcessor extends CommandProcessor {
         // Basename and Base64-encoded data of files.
         await Promise.all(command.files.map(async item => {
             data.files = data.files || [];
-            const content = await util.promisify(fs.readFile)(item, {
+            const content = await fs.readFile(item, {
                 encoding: 'base64'
             });
             data.files.push({
@@ -166,17 +201,17 @@ class RemoteProcessor extends CommandProcessor {
             return;
         }
 
-        await util.promisify(fs.ensureDir)(outputDir);
+        await fs.ensureDir(outputDir);
         const archive = await JSZip.loadAsync(response.result, {
             base64: true,
         });
         const files = Object.keys(archive.files);
         await Promise.all(files.map(async fileName => {
             const filePath = path.join(outputDir, fileName);
-            await util.promisify(fs.ensureDir)(path.dirname(filePath));
+            await fs.ensureDir(path.dirname(filePath));
             const file = archive.files[fileName];
             const content = await file.async('base64');
-            await util.promisify(fs.writeFile)(filePath, content, {
+            await fs.writeFile(filePath, content, {
                 encoding: 'base64'
             });
         }));
@@ -221,6 +256,51 @@ function dfsNode(node, parentOptions = {}) {
 }
 
 /**
+ * @param {Array<string | number>} params 
+ */
+function flattenParams(params) {
+    const uniqueParams = {};
+    const assign = (key, value) => {
+        let values = uniqueParams[key];
+        values = values || [];
+        if (key === '--variant') {
+            // Allow multiple values.
+            values.push(value);
+        } else {
+            if (values.length === 0) {
+                values = [value];
+            }
+        }
+        uniqueParams[key] = values;
+    }
+    let currentValue = undefined;
+    // Prefer later parameters.
+    for (let i = params.length - 1; i >= 0; --i) {
+        const param = params[i];
+        if (typeof param === `string` && param.startsWith(`--`)) {
+            assert(currentValue !== undefined);
+            assign(param, currentValue);
+            currentValue = undefined;
+        } else {
+            currentValue = param;
+        }
+    }
+    const paramPairs = [];
+    Object.keys(uniqueParams).forEach(key => {
+        uniqueParams[key].forEach(item => {
+            paramPairs.push([key, item]);
+        })
+    });
+    paramPairs.sort((lhs, rhs) => {
+        return JSON.stringify(lhs).localeCompare(JSON.stringify(rhs));
+    });
+    const results = [];
+    paramPairs.forEach(pair => {
+        results.push(...pair);
+    });
+    return results;
+}
+/**
  * Parses the specified options and returns an array of commands.
  * @param options The desired options.
  * @param outputDir The desired output directory.
@@ -232,18 +312,27 @@ function parseOptions(options, inputDir) {
         // No input or output specified.
         return [];
     }
-
-    const params = options.params || [];
+    const params = [];
+    if (options.params) {
+        options.params.forEach(item => {
+            if (item instanceof Array) {
+                params.push(...item);
+            } else {
+                params.push(item);
+            }
+        });
+    }
+    const flattenedParams = flattenParams(params);
     if (options.rotation) {
-        params.push('--enable-rotation');
+        flattenedParams.push('--enable-rotation');
     } else {
-        params.push('--disable-rotation');
+        flattenedParams.push('--disable-rotation');
     }
     if (options.auto_alias) {
-        params.push('--disable-auto-alias');
+        flattenedParams.push('--disable-auto-alias');
     }
     if (options.force_identical_layout) {
-        params.push('--force-identical-layout');
+        flattenedParams.push('--force-identical-layout');
     }
     const sheetExtension = options.sheet_extension || 'pvr.ccz';
     const dataExtension = options.data_extension || 'plist';
@@ -255,7 +344,7 @@ function parseOptions(options, inputDir) {
         inputFiles.push(...files);
     });
     return [{
-        params: params,
+        params: flattenedParams,
         files: inputFiles,
         sheet: `${path.join(...outputPath)}.${sheetExtension}`,
         data: `${path.join(...outputPath)}.${dataExtension}`,
